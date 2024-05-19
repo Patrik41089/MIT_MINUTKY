@@ -58,33 +58,6 @@ void process_time_change(uint8_t direction) {
     }
 }
 
-// Obsluha přerušení od časovače (každou minutu)
-INTERRUPT_HANDLER(TIM4_UPD_OVF_IRQHandler, TIM4_UPD_OVF_IRQn) {
-    // Snížit zbývající čas
-    if (remaining_time > 0) {
-        remaining_time--;
-    }
-    // Pokud došlo k vypršení času, zavolejte funkci beep
-    if (remaining_time == 0) {
-        beep();
-    }
-    TIM4_ClearITPendingBit(TIM4_IT_UPDATE);
-}
-
-// Obsluha přerušení od enkoderu
-INTERRUPT_HANDLER(EXTI1_IRQHandler, EXTI1_IRQn) {
-    // Zjistěte směr otáčení enkoderu
-    uint8_t direction = 0;
-    if (GPIO_ReadInputPin(ENCODER_PORT, ENCODER_PIN_B) == RESET) {
-        direction = 1; // Otáčení doleva
-    } else {
-        direction = -1; // Otáčení doprava
-    }
-    process_time_change(direction);
-    // Vyčištění vlajky přerušení
-    EXTI_ClearITPendingBit(EXTI_IT_Pin1);
-}
-
 // Hlavní funkce
 int main() {
     // Inicializace periferií
