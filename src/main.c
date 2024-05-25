@@ -115,10 +115,8 @@ int main() {
     // Nekonečná smyčka
     while (1) {
         // Vaše hlavní smyčka kódu
-        // Přidání vaší logiky zde
-    }
-    // Tento kód nebude nikdy dosažen
-    // return 0; // Odstranění nebo přemístění returnu mimo nekonečnou smyčku
 
+    }
     return 0;
 }
+
