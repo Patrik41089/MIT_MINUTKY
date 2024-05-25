@@ -50,7 +50,7 @@ void beep() {
 }
 
 // Funkce pro zpracování změny času
-void process_time_change(uint8_t direction) {
+void process_time_change(int8_t direction) {
     if (direction == 1 && remaining_time < MAX_TIME) {
         remaining_time++;
     } else if (direction == -1 && remaining_time > 0) {
@@ -58,12 +58,67 @@ void process_time_change(uint8_t direction) {
     }
 }
 
-// Hlavní funkce
+// Deklarace funkcí pro LCD
+void LCD_Init();
+void LCD_Clear();
+void LCD_SendCommand(uint8_t cmd);
+void LCD_SendData(uint8_t data);
+
+// Funkce pro inicializaci LCD
+void LCD_Init() {
+    // Implementace inicializace LCD
+    // Např. Reset LCD, nastavení SPI, poslání inicializačních příkazů
+}
+
+// Funkce pro vyčištění LCD
+void LCD_Clear() {
+    LCD_SendCommand(0x01); // Předpokládejme, že 0x01 je příkaz pro vyčištění LCD
+}
+
+// Funkce pro odeslání příkazu na LCD
+void LCD_SendCommand(uint8_t cmd) {
+    // Implementace odeslání příkazu přes SPI
+    // Např. nastavení DC pinu na LOW, poslání dat přes SPI
+    (void)cmd; // Označení argumentu jako použitý
+}
+
+// Funkce pro odeslání dat na LCD
+void LCD_SendData(uint8_t data) {
+    // Implementace odeslání dat přes SPI
+    // Např. nastavení DC pinu na HIGH, poslání dat přes SPI
+    (void)data; // Označení argumentu jako použitý
+}
+
+// Inicializace SPI
+void init_spi() {
+    // Reset SPI periférie
+    SPI_DeInit();
+
+    // Inicializace SPI v master módu, rychlost 1 MHz, CPOL a CPHA (mód 0)
+    SPI_Init(SPI_FIRSTBIT_MSB, SPI_BAUDRATEPRESCALER_16, SPI_MODE_MASTER, 
+             SPI_CLOCKPOLARITY_LOW, SPI_CLOCKPHASE_1EDGE, 
+             SPI_DATADIRECTION_2LINES_FULLDUPLEX, SPI_NSS_SOFT, 0x07);
+
+    // Povolit SPI
+    SPI_Cmd(ENABLE);
+}
+
 int main() {
     // Inicializace periferií
     init_peripherals();
     init_timer();
+    init_spi();
+    LCD_Init();
+    // Vyčištění displeje
+    LCD_Clear();
+
     // Nekonečná smyčka
-    while (1) {}
+    while (1) {
+        // Vaše hlavní smyčka kódu
+        // Přidání vaší logiky zde
+    }
+    // Tento kód nebude nikdy dosažen
+    // return 0; // Odstranění nebo přemístění returnu mimo nekonečnou smyčku
+
     return 0;
 }
