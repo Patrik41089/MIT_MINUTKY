@@ -15,5 +15,5 @@ PROJEKT MINUTKY
 
 3) Kompilace
 
-`Kompilaci a spuštění kodu z naší knihovny popsal velice dobře pan učitel Nožka v readme, které jsem přiložil v tomto projektu do složky archivy
+`Kompilaci a spuštění kodu z naší knihovny popsal velice dobře pan učitel Nožka v readme, které jsem přiložil v tomto projektu do složky` [archived_files](https://github.com/Patrik41089/MIT_MINUTKY/tree/main/archived_files)
   
