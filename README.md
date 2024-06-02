@@ -32,11 +32,12 @@ PROJEKT MINUTKY
 `Je dobré vědět, že klasickou kompilaci kódu lze provést i bez připojeného STM8 k PC (pomocí make), ale následné otestování a nahrátí (make flash) do STM8 lze samozřejmě pouze s STM8 připojeným k PC (výše jsem psal jak zajistit, aby nenastala chyba při nezapnutém povolení pro USB porty). Pokud kompilace nevyhazuje errory tak kód je zkompilovaný a lze jej nahrát do STM8.`
 
 **6) Součástky**
+
 `Asi nejdůležitější část si pořádně zkontrolovat jestli máme vše pro fyzické sestavení našeho projektu (což je bohužel část na které jsem se zasekl nejvíc). Pro svůj projekt budu potřebovat:`
 
 <table>
   <tr>
-    <th colspan="3">Tabulka</th>
+    <th colspan="3">Tabulka potřebných součástek</th>
   </tr>
   <tr>
     <td><code>Nepájivé pole</code></td>
@@ -45,12 +46,12 @@ PROJEKT MINUTKY
   </tr>
   <tr>
     <td><code>Enkodér</code></td>
-    <td>Nastavení minut pomocí otáčení enkodéru (podle mého vybraného zadání 1-180 minut)</td>
+    <td>Nastavení minut pomocí otáčení enkodéru (podle mého vybraného zadání 1-180 minut), já jsem si raději vybral enkodér než možnost tlačítek</td>
     <td><code>nebo tlačítka</code></td>
   </tr>
   <tr>
-    <td><code>Enkodér</code></td>
-    <td>Nastavení minut pomocí otáčení enkodéru (podle mého vybraného zadání 1-180 minut)</td>
+    <td><code>Reproduktor</code></td>
+    <td>Po skončení odpočtu minut se ozve akustický signál, já jsem si zvolil jednoduchý Buzzer, protože bude bohatě stačit</td>
     <td><code>nebo Buzzer</code></td>
   </tr>
   <tr>
