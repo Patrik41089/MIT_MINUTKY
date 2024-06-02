@@ -10,7 +10,7 @@ PROJEKT MINUTKY
 
 **1) Prostředí pro možnost kompilace kódu v C**
 
-`Jako první je potřeba si zajistit prostředí ve kterém se bude programovat pro jazyk C. Vzhledem k tomu, že na Windows to jen tak s visual studio nejde tak jsou dvě možnosti:`
+`Jako první je potřeba si zajistit prostředí ve kterém se bude programovat pro jazyk C. Vzhledem k tomu, že na Windows to jen tak s Visual studio nejde tak jsou dvě možnosti:`
 * Nainstalovat kompilátor pro Windows (například Cosmic)
   * nebo
 * Nainstalovat Linux (já jsem si nainstaloval [Oracle OM Virtualbox](https://www.virtualbox.org/), který má v sobě oprační systém Linux)
@@ -25,8 +25,53 @@ PROJEKT MINUTKY
 
 **4) Kód**
 
-`Teď už zbývá napsat kód pro múj projekt. Převážně se kód píše pouze do souboru main.c, protože knihovnu už máme, ale pokud bych chtěl použít například nějaké přerušení tak bych ho musel dopsat ještě do souboru stm8s_it.c`
+`Teď už zbývá napsat kód pro můj projekt. Převážně se kód píše pouze do souboru main.c, protože knihovnu už máme, ale pokud bych chtěl použít například nějaké přerušení tak bych ho musel dopsat ještě do souboru stm8s_it.c. Taky nezapomenout, že pokud budeme některý z modulů používat je nutné si hlavičkový soubor (koncovka .h) z lib (library) převést do inc (included).`
 
 **5) Kompilace**
-`Je dobré vědět, že klasickou kompilaci kódu lze provést pouze při připojeném STM8 k PC` 
+
+`Je dobré vědět, že klasickou kompilaci kódu lze provést i bez připojeného STM8 k PC (pomocí make), ale následné otestování a nahrátí (make flash) do STM8 lze samozřejmě pouze s STM8 připojeným k PC (výše jsem psal jak zajistit, aby nenastala chyba při nezapnutém povolení pro USB porty). Pokud kompilace nevyhazuje errory tak kód je zkompilovaný a lze jej nahrát do STM8.`
+
+**6) Součástky**
+`Asi nejdůležitější část si pořádně zkontrolovat jestli máme vše pro fyzické sestavení našeho projektu (což je bohužel část na které jsem se zasekl nejvíc). Pro svůj projekt budu potřebovat:`
+
+<table>
+  <tr>
+    <th colspan="3">Tabulka</th>
+  </tr>
+  <tr>
+    <td><code>Nepájivé pole</code></td>
+    <td>stáhne a nachystá knihovny</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><code>Enkodér</code></td>
+    <td></td>
+    <td><code>nebo tlačítka</code></td>
+  </tr>
+  <tr>
+    <td colspan="3"><code>make flash</code> nahraje program do chipu. Na Linuxu se použije <a href="https://openocd.org/">OpenOCD</a>. Na Windows se použije <a href="https://www.st.com/en/development-tools/stvp-stm8.html">STVP</a> verze pro příkazový řádek.</td>
+  </tr>
+  <tr>
+    <td colspan="3"><code>make flash2</code> záložní varianta, protože OpenOCD někdy nechce čip naprogramovat (používá <a href="https://github.com/vdudouyt/stm8flash">stm8flash</a>).</td>
+  </tr>
+  <tr>
+    <td><code>make clean</code></td>
+    <td>smaže všechno, co nakompiloval</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><code>make rebuild</code></td>
+    <td>smaže vše a znovu zkompiluje</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><code>make openocd</code></td>
+    <td>pustí <code>openocd</code> pro debug</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td colspan="3"><code>make debug</code> spustí STM8-gdb</td>
+  </tr>
+</table>
+
   
