@@ -17,7 +17,7 @@ PROJEKT MINUTKY
 
 **2) Knihovna**
 
-`Narozdíl od Pythonu je zde potřeba více souborů pro funkci našeho kodu v C pro STM8S. Knihovnu, tedy` [Toolchain](https://github.com/spseol/STM8S-toolchain) `máme z hodin MIT od pana učitele Nožky. V jiném případě je možné si knihovnu napsat sám podle potřeb nebo někde stáhnout.`
+`Narozdíl od Pythonu je zde potřeba více souborů pro funkci našeho kódu v C pro STM8S. Knihovnu, tedy` [Toolchain](https://github.com/spseol/STM8S-toolchain) `máme z hodin MIT od pana učitele Nožky. V jiném případě je možné si knihovnu napsat sám podle potřeb nebo někde stáhnout.`
 
 **3) Rozběh knihovny**
 
@@ -40,8 +40,13 @@ PROJEKT MINUTKY
     <th colspan="3">Tabulka potřebných součástek</th>
   </tr>
   <tr>
+    <td><code>STM8</code></td>
+    <td>Propojení součástek a připojení pro napájení a komunikaci s PC</td>
+    <td></td>
+  </tr>
+  <tr>
     <td><code>Nepájivé pole</code></td>
-    <td>propojení potřebných součástek (některé součástky nejspíš budou stačit propojit přímo k STM8)</td>
+    <td>Propojení potřebných součástek (některé součástky nejspíš budou stačit propojit přímo k STM8)</td>
     <td></td>
   </tr>
   <tr>
@@ -57,6 +62,7 @@ PROJEKT MINUTKY
   <tr>
     <td><code>Kabely F-M</code></td>
     <td>Propojení všech součástek k nepájivému poli či k SMT8</td>
+    <td></td>
   </tr>
   <tr>
     <td><code>Displej LCD</code></td>
@@ -65,6 +71,16 @@ PROJEKT MINUTKY
   </tr>
 </table>
 
+**7) Testování**
+
+`Je asi zřejmé, že na první pokus to nebude fungovat jak si představujeme a budeme postupně opakovat stejné kroky:`
+* Postupná úprava kódu, aby nám to fungovalo jak požadujeme
+* Kompilace a nahrátí kódu do SMT8
+* Následné testování na součástkách
+
+**8) Závěr**
+
+`
 
 
   
