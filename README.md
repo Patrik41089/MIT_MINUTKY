@@ -40,37 +40,23 @@ PROJEKT MINUTKY
   </tr>
   <tr>
     <td><code>Nepájivé pole</code></td>
-    <td>stáhne a nachystá knihovny</td>
+    <td>propojení potřebných součástek (některé součástky nejspíš budou stačit propojit přímo k STM8)</td>
     <td></td>
   </tr>
   <tr>
     <td><code>Enkodér</code></td>
-    <td></td>
+    <td>Nastavení minut pomocí otáčení enkodéru (podle mého vybraného zadání 1-180 minut)</td>
     <td><code>nebo tlačítka</code></td>
   </tr>
   <tr>
-    <td colspan="3"><code>make flash</code> nahraje program do chipu. Na Linuxu se použije <a href="https://openocd.org/">OpenOCD</a>. Na Windows se použije <a href="https://www.st.com/en/development-tools/stvp-stm8.html">STVP</a> verze pro příkazový řádek.</td>
+    <td><code>Enkodér</code></td>
+    <td>Nastavení minut pomocí otáčení enkodéru (podle mého vybraného zadání 1-180 minut)</td>
+    <td><code>nebo Buzzer</code></td>
   </tr>
   <tr>
-    <td colspan="3"><code>make flash2</code> záložní varianta, protože OpenOCD někdy nechce čip naprogramovat (používá <a href="https://github.com/vdudouyt/stm8flash">stm8flash</a>).</td>
-  </tr>
-  <tr>
-    <td><code>make clean</code></td>
-    <td>smaže všechno, co nakompiloval</td>
-    <td></td>
-  </tr>
-  <tr>
-    <td><code>make rebuild</code></td>
-    <td>smaže vše a znovu zkompiluje</td>
-    <td></td>
-  </tr>
-  <tr>
-    <td><code>make openocd</code></td>
-    <td>pustí <code>openocd</code> pro debug</td>
-    <td></td>
-  </tr>
-  <tr>
-    <td colspan="3"><code>make debug</code> spustí STM8-gdb</td>
+   <td></td>
+   <td></td>
+   <td></td>
   </tr>
 </table>
 
