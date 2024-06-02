@@ -55,10 +55,16 @@ PROJEKT MINUTKY
     <td><code>nebo Buzzer</code></td>
   </tr>
   <tr>
-   <td></td>
-   <td></td>
-   <td></td>
+    <td><code>Kabely F-M</code></td>
+    <td>Propojení všech součástek k nepájivému poli či k SMT8</td>
+  </tr>
+  <tr>
+    <td><code>Displej LCD</code></td>
+    <td>Tady je spousta možností jaký použít. Já si osobně myslím, protože můj projekt je vyloženě o zobrazování na displeji, pro vizualizaci minut bude nejlepší vzít displej na kterém čísla budou hezky vidět, proto jsem si zvolil LCD</td>
+    <td><code>nebo třeba řádkový SPI</code></td>
   </tr>
 </table>
+
+
 
   
