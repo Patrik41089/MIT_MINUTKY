@@ -78,8 +78,355 @@ PROJEKT MINUTKY
 * Kompilace a nahrátí kódu do SMT8
 * Následné testování na součástkách
 
-**8) Závěr**
+Závěr
+=
 
+**1) VÝVOJOVÝ DIAGRAM**
+
+**2) POPIS FUNKCE KÓDU**
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "stm8s.h"
+#include "stm8s_spi.h"
+#include "uart1.h"
+#include "max7219.h"
+
+
+// Definice pinu pro akustický signál
+#define BUZZER_PIN GPIO_PIN_3
+#define BUZZER_PORT GPIOC
+
+// Definice pinů pro enkoder
+#define ENCODER_SW_PIN GPIO_PIN_1   // SW
+#define ENCODER_SW_PORT GPIOA     
+
+#define ENCODER_DT_PIN GPIO_PIN_2   // DT
+#define ENCODER_DT_PORT GPIOA 
+
+#define ENCODER_CLK_PIN GPIO_PIN_3  // CLK
+#define ENCODER_CLK_PORT GPIOA    
+
+// Definice pinů pro řádkový displej SPI
+#define SPI_MOSI_PIN GPIO_PIN_7  // DIN
+#define SPI_MOSI_PORT GPIOB       
+
+#define SPI_SCK_PIN GPIO_PIN_4   // CLK
+#define SPI_SCK_PORT GPIOD      
+
+#define SPI_CS_PIN GPIO_PIN_6  // CS
+#define SPI_CS_PORT GPIOB      
+
+// Maximální čas v minutách
+#define MAX_TIME 180
+
+// Proměnná pro uložení zbývajícího času
+volatile uint8_t remaining_time = 100;
+
+// Prototypy funkcí
+void Encoder_GPIO_Init(void);
+void SPI_Init_Display(void);
+void SPI_SendData_ToDisplay(uint8_t data);
+void delay_ms(uint16_t ms);
+int8_t Read_Encoder(void);
+
+void Encoder_GPIO_Init(void)
+{
+    // Povolit hodiny pro port GPIOA (není třeba, je implicitně povoleno u STM8)
+
+    // Nastavení SW pinu jako vstup bez pull-up odporu
+    GPIO_Init(ENCODER_SW_PORT, ENCODER_SW_PIN, GPIO_MODE_IN_FL_NO_IT);
+
+    // Nastavení DT pinu jako vstup bez pull-up odporu
+    GPIO_Init(ENCODER_DT_PORT, ENCODER_DT_PIN, GPIO_MODE_IN_FL_NO_IT);
+
+    // Nastavení CLK pinu jako vstup bez pull-up odporu
+    GPIO_Init(ENCODER_CLK_PORT, ENCODER_CLK_PIN, GPIO_MODE_IN_FL_NO_IT);
+}
+
+// Inicializace periferií
+void init_peripherals() {
+    // Inicializace GPIO pro akustický signál
+    GPIO_Init(BUZZER_PORT, BUZZER_PIN, GPIO_MODE_OUT_PP_LOW_FAST);
+
+    // Inicializace GPIO pro enkoder jako vstupy s pull-up odpory
+    //GPIO_Init(ENCODER_PORT, ENCODER_PIN_1 | ENCODER_PIN_2, GPIO_MODE_IN_PU_IT);
+
+    // Nastavení interruptu pro enkoder (nepotřebné, pokud nepoužíváte interrupt)
+    //EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOA, EXTI_SENSITIVITY_FALL_ONLY);
+    //EXTI_SetTLISensitivity(EXTI_TLISENSITIVITY_FALL_ONLY);
+}
+
+// Funkce pro zpracování akustického signálu
+void beep() {
+    GPIO_WriteReverse(BUZZER_PORT, BUZZER_PIN);
+    // Počkejte krátkou dobu, abyste mohli slyšet zvuk
+    for(int i = 0; i < 10000; i++)
+        GPIO_WriteReverse(BUZZER_PORT, BUZZER_PIN);
+}
+
+// Funkce pro zpracování změny času
+void process_time_change(int8_t direction) {
+    if (direction == 1 && remaining_time < MAX_TIME) {
+        remaining_time++;
+    } else if (direction == -1 && remaining_time > 0) {
+        remaining_time--;
+    }
+}
+
+// Inicializace SPI
+void init_spi() {
+    // Povolit hodiny pro SPI
+    CLK_PeripheralClockConfig(CLK_PERIPHERAL_SPI, ENABLE);
+    // Inicializace SPI v master módu, rychlost 1 MHz, CPOL a CPHA (mód 0)
+    SPI_Init(SPI_FIRSTBIT_MSB, SPI_BAUDRATEPRESCALER_16, SPI_MODE_MASTER, 
+             SPI_CLOCKPOLARITY_LOW, SPI_CLOCKPHASE_1EDGE, 
+             SPI_DATADIRECTION_2LINES_FULLDUPLEX, SPI_NSS_SOFT, 0x07);
+    // Povolit SPI
+    SPI_Cmd(ENABLE);
+    // Inicializace CS pinu jako výstupního
+    GPIO_Init(SPI_CS_PORT, SPI_CS_PIN, GPIO_MODE_OUT_PP_HIGH_FAST);
+}
+
+void SPI_Init_Display(void)
+{
+    // Povolit hodiny pro porty
+    CLK_PeripheralClockConfig(CLK_PERIPHERAL_SPI, ENABLE);
+
+    // Inicializace SPI
+    //SPI_Init(SPI_FIRSTBIT_MSB, SPI_BAUDRATEPRESCALER_16, SPI_MODE_MASTER, 
+             //SPI_CLOCKPOLARITY_LOW, SPI_CLOCKPHASE_1EDGE, SPI_DATADIRECTION_1LINE_TX, 
+             //SPI_NSS_SOFT, 0x07);
+    SPI_Init(SPI_FIRSTBIT_MSB, SPI_BAUDRATEPRESCALER_16, SPI_MODE_MASTER, 
+             SPI_CLOCKPOLARITY_LOW, SPI_CLOCKPHASE_1EDGE, SPI_DATADIRECTION_2LINES_FULLDUPLEX, 
+             SPI_NSS_SOFT, 0x07);
+    SPI_Cmd(ENABLE);
+
+    // Inicializace CS pinu jako výstupního
+    GPIO_Init(SPI_CS_PORT, SPI_CS_PIN, GPIO_MODE_OUT_PP_HIGH_FAST);
+}
+
+void SPI_SendData_ToDisplay(uint8_t data)
+{
+    GPIO_WriteLow(SPI_CS_PORT, SPI_CS_PIN);  // CS Low to select the slave
+    SPI_SendData(data);
+    while (SPI_GetFlagStatus(SPI_FLAG_TXE) == RESET);  // Wait for transmission to complete
+    GPIO_WriteHigh(SPI_CS_PORT, SPI_CS_PIN);  // CS High to deselect the slave
+}
+
+int8_t Read_Encoder(void)
+{
+    static uint8_t last_DT_state = 0;
+    uint8_t current_CLK_state = GPIO_ReadInputPin(ENCODER_CLK_PORT, ENCODER_CLK_PIN);
+    uint8_t current_DT_state = GPIO_ReadInputPin(ENCODER_DT_PORT, ENCODER_DT_PIN);
+
+    int8_t encoder_value = 0;
+
+    if (current_CLK_state != last_DT_state)
+    {
+        if (current_DT_state != current_CLK_state)
+        {
+            encoder_value = 1;  // Clockwise
+        }
+        else
+        {
+            encoder_value = -1;  // Counterclockwise
+        }
+    }
+
+    last_DT_state = current_CLK_state;
+
+    return encoder_value;
+}
+
+void delay_ms(uint16_t ms)
+{
+    for (uint16_t i = 0; i < ms; i++)
+    {
+        for (uint16_t j = 0; j < 1600; j++)
+        {
+            __asm__("nop");
+        }
+    }
+}
+
+void main(void)
+{
+    CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);  // Nastavení hodinového prescaleru
+    init_peripherals();
+    init_spi();
+    Encoder_GPIO_Init();  // Inicializace pinů enkodéru
+    SPI_Init_Display();   // Inicializace SPI pro displej
+
+    while (1)
+    {
+        int8_t encoder_change = Read_Encoder();
+        if (encoder_change != 0)
+        {
+            remaining_time += encoder_change;
+            if (remaining_time > MAX_TIME)
+            {
+                remaining_time = MAX_TIME;
+            }
+            else if (remaining_time < 0)
+            {
+                remaining_time = 0;
+            }
+        }
+
+        // Aktualizace displeje s novou hodnotou zbývajícího času
+        char display_buffer[4];
+        sprintf(display_buffer, "%03d", remaining_time);
+        for (uint8_t i = 0; i < 3; i++)
+        {
+            SPI_SendData_ToDisplay(display_buffer[i]);
+        }
+
+        // Odpocet, pokud je zbývající čas větší než nula
+    if (remaining_time > 0)
+    {
+        delay_ms(1000); // Počkej jednu sekundu
+        remaining_time--; // Sniz čas o jednu sekundu
+    }
+        else
+        {
+            // Akustický signál po dosažení nuly
+            for (int i = 0; i < 5; i++)
+            {
+                beep(); // Aktivace akustického signálu
+                delay_ms(1000); // Počkej jednu sekundu
+            }
+        }
+    }
+}
+
+NOZKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+#include <stdbool.h>
+#include <stm8s.h>
+#include <stdio.h>
+#include "main.h"
+#include "milis.h"
+//#include "delay.h"
+#include "max7219.h"
+
+/*#define DIN_PORT GPIOB
+#define DIN_PIN GPIO_PIN_4
+#define CS_PORT GPIOB
+#define CS_PIN GPIO_PIN_3
+#define CLK_PORT GPIOB
+#define CLK_PIN GPIO_PIN_2
+*/
+
+#define DIN_PIN GPIO_PIN_7  // DIN
+#define DIN_PORT GPIOB       
+
+#define CLK_PIN GPIO_PIN_4   // CLK
+#define CLK_PORT GPIOD      
+
+#define CS_PIN GPIO_PIN_6  // CS
+#define CS_PORT GPIOB   
+void init(void) {
+    CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1); // taktovani MCU na 16MHz
+
+    GPIO_Init(DIN_PORT, DIN_PIN, GPIO_MODE_OUT_PP_LOW_SLOW);
+    GPIO_Init(CS_PORT, CS_PIN, GPIO_MODE_OUT_PP_HIGH_SLOW);
+    GPIO_Init(CLK_PORT, CLK_PIN, GPIO_MODE_OUT_PP_LOW_SLOW);
+
+    init_milis();
+
+}
+
+void display(uint8_t address, uint8_t data) {
+    uint8_t mask;
+    LOW(CS); // začátek přenosu
+
+    /* pošlu adresu */
+    mask = 128;
+    mask = 1 << 7;
+    mask = 0b10000000;
+    while (mask) {
+        if (address & mask) {
+            HIGH(DIN);
+        } else {
+            LOW(DIN);
+        }
+        HIGH(CLK);
+        mask = mask >> 1;
+        LOW(CLK);
+    }
+    /* pošlu data */
+    mask = 0b10000000;
+    while (mask) {
+        if (data & mask) {
+            HIGH(DIN);
+        } else {
+            LOW(DIN);
+        }
+        HIGH(CLK);
+        mask = mask >> 1;
+        LOW(CLK);
+    }
+
+    HIGH(CS); // konec přenosu
+}
+
+int main(void) {
+
+    uint32_t time = 0;
+    uint8_t number = 1;
+
+    init();
+
+    display(DECODE_MODE, 0b11111111);
+    display(SCAN_LIMIT, 7);
+    display(INTENSITY, 1);
+    display(DISPLAY_TEST, DISPLAY_TEST_OFF);
+    display(SHUTDOWN, SHUTDOWN_ON);
+    display(DIGIT0, 0xF);
+    display(DIGIT1, 0xF);
+    display(DIGIT2, 0xF);
+    display(DIGIT3, 0xF);
+    display(DIGIT4, 0xF);
+    display(DIGIT5, 0xF);
+    display(DIGIT6, 0xF);
+    display(DIGIT7, 0xF);
+
+    while (1) {
+        if (milis() - time > 333) {
+            time = milis();
+            display(DIGIT0, number);
+            display(DIGIT1, number);
+            display(DIGIT2, number);
+            display(DIGIT3, number);
+            display(DIGIT4, number);
+            display(DIGIT5, number);
+            display(DIGIT6, number);
+            display(DIGIT7, number);
+            number++;
+        }
+    }
+}
+
+/*-------------------------------  Assert -----------------------------------*/
+#include "__assert__.h"
+
+
+VYPOCETTTTTTTTTTTTTTTTTTTTTTTT
+        uint32_t d1 = n%10;
+        uint32_t d2 = n/10;
+        n = n%100;
+        uint32_t d3 = n/100;
+        n = n%1000;
+        uint32_t d4 = n/1000;
+        n = n%10000;
+        uint32_t d5= n/10000;
+        n= n%1000000;
+        uint32_t d6 = n/1000000;
+        n= n%10000000;
+        uint32_t d7 = n/10000000;
+        n = n%10000000;
+        uint32_t d8 = n/100000000;
 `
 
 
