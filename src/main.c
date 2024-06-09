@@ -51,7 +51,6 @@ void init_peripherals();
 void beep();
 void process_time_change(int8_t direction);
 void init_spi();
-void SPI_Init_Display(void);
 int8_t Read_Encoder(void);
 void init(void);
 void display(uint8_t address, uint8_t data);
@@ -117,23 +116,6 @@ void init_spi() {
              SPI_DATADIRECTION_2LINES_FULLDUPLEX, SPI_NSS_SOFT, 0x07);
     // Povolit SPI
     SPI_Cmd(ENABLE);
-    // Inicializace CS pinu jako výstupního
-    GPIO_Init(CS_PORT, CS_PIN, GPIO_MODE_OUT_PP_HIGH_FAST);
-}
-
-void SPI_Init_Display(void) {
-    // Povolit hodiny pro porty
-    CLK_PeripheralClockConfig(CLK_PERIPHERAL_SPI, ENABLE);
-
-    // Inicializace SPI
-    // SPI_Init(SPI_FIRSTBIT_MSB, SPI_BAUDRATEPRESCALER_16, SPI_MODE_MASTER,
-    // SPI_CLOCKPOLARITY_LOW, SPI_CLOCKPHASE_1EDGE, SPI_DATADIRECTION_1LINE_TX,
-    // SPI_NSS_SOFT, 0x07);
-    SPI_Init(SPI_FIRSTBIT_MSB, SPI_BAUDRATEPRESCALER_16, SPI_MODE_MASTER,
-             SPI_CLOCKPOLARITY_LOW, SPI_CLOCKPHASE_1EDGE,
-             SPI_DATADIRECTION_2LINES_FULLDUPLEX, SPI_NSS_SOFT, 0x07);
-    SPI_Cmd(ENABLE);
-
     // Inicializace CS pinu jako výstupního
     GPIO_Init(CS_PORT, CS_PIN, GPIO_MODE_OUT_PP_HIGH_FAST);
 }
