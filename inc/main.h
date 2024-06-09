@@ -39,4 +39,6 @@
 // functions
 void init(void);
 
+void preruseni(void);
+
 #endif // !_MAIN_H_

@@ -33,11 +33,17 @@
 #define CS_PIN GPIO_PIN_6 // CS
 #define CS_PORT GPIOB
 
+// Definice user tlačítka
+#define BUTTON_PIN GPIO_PIN_4
+#define BUTTON_PORT GPIOE
+
 // Maximální čas v minutách
 #define MAX_TIME 180
 
 // Proměnná pro uložení zbývajícího času
 volatile uint32_t n = MAX_TIME;
+// Definice globální proměnné pro indikaci stisknutí tlačítka
+volatile bool tlacitko_stisknuto = false;
 
 // Prototypy funkcí
 void Encoder_GPIO_Init(void);
@@ -52,6 +58,9 @@ void display(uint8_t address, uint8_t data);
 void update_display(int32_t value);
 void update_display_from_encoder();
 void init_timer();
+void GPIO_Init_UserButton(void);
+void EXTI_Init_UserButton(void);
+void preruseni(void);
 
 void Encoder_GPIO_Init(void) {
     // Povolit hodiny pro port GPIOA (není třeba, je implicitně povoleno u STM8)
@@ -75,10 +84,10 @@ void init_peripherals() {
     // GPIO_Init(ENCODER_PORT, ENCODER_PIN_1 | ENCODER_PIN_2,
     // GPIO_MODE_IN_PU_IT);
 
-    //Nastavení interruptu pro enkoder (nepotřebné, pokud nepoužíváte
-    // interrupt)
-    //EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOA, EXTI_SENSITIVITY_FALL_ONLY);
-    //EXTI_SetTLISensitivity(EXTI_TLISENSITIVITY_FALL_ONLY);
+    // Nastavení interruptu pro enkoder (nepotřebné, pokud nepoužíváte
+    //  interrupt)
+    // EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOA, EXTI_SENSITIVITY_FALL_ONLY);
+    // EXTI_SetTLISensitivity(EXTI_TLISENSITIVITY_FALL_ONLY);
 }
 
 // Funkce pro zpracování akustického signálu
@@ -175,7 +184,7 @@ void display(uint8_t address, uint8_t data) {
 
     /* pošlu adresu */
     mask = 128;
-    mask = 1 << 7; // chybový radek 177
+    mask = 1 << 7;
     mask = 0b10000000;
     while (mask) {
         if (address & mask) {
@@ -227,8 +236,27 @@ void update_display_from_encoder() {
     if (encoder_change != 0) {
         process_time_change(encoder_change);
         if (n == 0) {
-            n = MAX_TIME; // Nastavit čas na maximální hodnotu, pokud dosáhne nuly
+            n = MAX_TIME; // Nastavit čas na maximální hodnotu, pokud dosáhne
+                          // nuly
         }
+    }
+}
+
+void GPIO_Init_UserButton(void) {
+    // Nastavení pinu PE4 jako vstup s pull-up rezistorem
+    GPIO_Init(BUTTON_PORT, BUTTON_PIN, GPIO_MODE_IN_PU_IT);
+}
+
+// Inicializace přerušení pro tlačítko USER
+void EXTI_Init_UserButton(void) {
+    // Povolení přerušení na pádu hrany (falling edge) pro port D
+    EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOE, EXTI_SENSITIVITY_FALL_ONLY);
+}
+
+// Obsluha přerušení pro port D
+void preruseni(void) {
+    if (GPIO_ReadInputPin(BUTTON_PORT, BUTTON_PIN) == RESET && n > 0) {
+        tlacitko_stisknuto = true;
     }
 }
 
@@ -250,7 +278,9 @@ void EXTI_SW_ISR(void) {
 }
 */
 void main(void) {
+
     uint32_t time = 0;
+    uint32_t time2 = 0;
 
     init();
     CLK_HSIPrescalerConfig(
@@ -259,8 +289,15 @@ void main(void) {
     init_spi();
     Encoder_GPIO_Init(); // Inicializace pinů enkodéru
     // init_timer();
-    //EXTI_Configuration();
-    rim(); // Globální povolení přerušení
+    // EXTI_Configuration();
+    // Inicializace GPIO
+    GPIO_Init_UserButton();
+
+    // Inicializace přerušení
+    EXTI_Init_UserButton();
+
+    // Povolení globálních přerušení
+    enableInterrupts();
 
     display(DECODE_MODE, 0b11111111);
     display(SCAN_LIMIT, 7);
@@ -288,29 +325,15 @@ void main(void) {
             for (uint8_t i = 0; i < 3; i++) {
                 SPI_SendData_ToDisplay(display_buffer[i]);
             }
-            // ENKODER TLACITKO
-            /*if (encoder_button_pressed) {
-                int8_t encoder_change = Read_Encoder();
-                if (encoder_change != 0) {
-                    process_time_change(encoder_change); // Aktualizovat čas
-                    // Můžete přidat další akce, které mají být provedeny po
-                    // stisknutí tlačítka Například spuštění odpočtu
-                    if (n > 0) {
-                        n--; // Snížení času o jednu sekundu
-                    }
-                }
-                encoder_button_pressed =
-                    false; // Resetovat příznak stisknutí tlačítka
-            }*/
-        } /*
-                 // Odpocet, pokud je zbývající čas větší než nula
-                 if (n > 0) {
-                     n--; // Sniz čas o jednu sekundu
-                 } else {
-                     // Akustický signál po dosažení nuly
-                     for (int i = 0; i < 5; i++) {
-                         beep(); // Aktivace akustického signálu
-                     }
-                 }*/
+        }
+        if (milis() - time2 > 1000) {
+            time2 = milis();
+            if (tlacitko_stisknuto && n > 0) {
+                n--;
+            }
+            if (n == 0) {
+                tlacitko_stisknuto = false;
+            }
+        }
     }
 }
