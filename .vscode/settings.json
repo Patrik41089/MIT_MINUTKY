@@ -7,6 +7,7 @@
         "--header-insertion=never"
     ],
     "files.associations": {
-        "stm8s_spi.h": "c"
+        "stm8s_spi.h": "c",
+        "compare": "c"
     }
 }

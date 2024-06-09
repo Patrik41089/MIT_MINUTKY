@@ -6,16 +6,18 @@
 // #include "delay.h"
 #include "max7219.h"
 #include "stm8s_spi.h"
+// #include "stm8s_tim1.h" // Přidán header pro TIM1
+// #include "stm8s_tim4.h" // Přidán header pro TIM4
 
 // Definice pinu pro akustický signál
 #define BUZZER_PIN GPIO_PIN_3
 #define BUZZER_PORT GPIOC
 
 // Definice pinů pro enkoder
-#define ENCODER_SW_PIN GPIO_PIN_1 // SW
+#define ENCODER_SW_PIN GPIO_PIN_5 // SW
 #define ENCODER_SW_PORT GPIOA
 
-#define ENCODER_DT_PIN GPIO_PIN_2 // DT
+#define ENCODER_DT_PIN GPIO_PIN_4 // DT
 #define ENCODER_DT_PORT GPIOA
 
 #define ENCODER_CLK_PIN GPIO_PIN_3 // CLK
@@ -47,6 +49,9 @@ void SPI_Init_Display(void);
 int8_t Read_Encoder(void);
 void init(void);
 void display(uint8_t address, uint8_t data);
+void update_display(int32_t value);
+void update_display_from_encoder();
+void init_timer();
 
 void Encoder_GPIO_Init(void) {
     // Povolit hodiny pro port GPIOA (není třeba, je implicitně povoleno u STM8)
@@ -70,10 +75,10 @@ void init_peripherals() {
     // GPIO_Init(ENCODER_PORT, ENCODER_PIN_1 | ENCODER_PIN_2,
     // GPIO_MODE_IN_PU_IT);
 
-    // Nastavení interruptu pro enkoder (nepotřebné, pokud nepoužíváte
+    //Nastavení interruptu pro enkoder (nepotřebné, pokud nepoužíváte
     // interrupt)
-    // EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOA, EXTI_SENSITIVITY_FALL_ONLY);
-    // EXTI_SetTLISensitivity(EXTI_TLISENSITIVITY_FALL_ONLY);
+    //EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOA, EXTI_SENSITIVITY_FALL_ONLY);
+    //EXTI_SetTLISensitivity(EXTI_TLISENSITIVITY_FALL_ONLY);
 }
 
 // Funkce pro zpracování akustického signálu
@@ -87,7 +92,7 @@ void beep() {
 // Funkce pro zpracování změny času
 void process_time_change(int8_t direction) {
     if (direction == 1 && n < MAX_TIME) {
-        n++;
+        n--;
     } else if (direction == -1 && n > 0) {
         n--;
     }
@@ -124,12 +129,12 @@ void SPI_Init_Display(void) {
     GPIO_Init(CS_PORT, CS_PIN, GPIO_MODE_OUT_PP_HIGH_FAST);
 }
 
-void SPI_SendData_ToDisplay(uint8_t data)
-{
-    GPIO_WriteLow(CS_PORT, CS_PIN);  // CS Low to select the slave
+void SPI_SendData_ToDisplay(uint8_t data) {
+    GPIO_WriteLow(CS_PORT, CS_PIN); // CS Low to select the slave
     SPI_SendData(data);
-    while (SPI_GetFlagStatus(SPI_FLAG_TXE) == RESET);  // Wait for transmission to complete
-    GPIO_WriteHigh(CS_PORT, CS_PIN);  // CS High to deselect the slave
+    while (SPI_GetFlagStatus(SPI_FLAG_TXE) == RESET)
+        ;                            // Wait for transmission to complete
+    GPIO_WriteHigh(CS_PORT, CS_PIN); // CS High to deselect the slave
 }
 
 int8_t Read_Encoder(void) {
@@ -143,7 +148,7 @@ int8_t Read_Encoder(void) {
 
     if (current_CLK_state != last_DT_state) {
         if (current_DT_state != current_CLK_state) {
-            encoder_value = 1; // Clockwise
+            encoder_value = -1; // Clockwise
         } else {
             encoder_value = -1; // Counterclockwise
         }
@@ -165,12 +170,12 @@ void init(void) {
 }
 
 void display(uint8_t address, uint8_t data) {
-    uint8_t mask;
+    uint32_t mask;
     LOW(CS); // začátek přenosu
 
     /* pošlu adresu */
     mask = 128;
-    mask = 1 << 7;
+    mask = 1 << 7; // chybový radek 177
     mask = 0b10000000;
     while (mask) {
         if (address & mask) {
@@ -198,6 +203,52 @@ void display(uint8_t address, uint8_t data) {
     HIGH(CS); // konec přenosu
 }
 
+void update_display(int32_t value) {
+    uint32_t digit0 = value % 10;
+    uint32_t digit1 = (value / 10) % 10;
+    uint32_t digit2 = (value / 100) % 10;
+
+    display(DIGIT0, digit0);
+    display(DIGIT1, digit1);
+    display(DIGIT2, digit2);
+}
+
+/*void init_timer() {
+    // Nastavení časovače TIM1
+    TIM1_TimeBaseInit(16000, TIM1_COUNTERMODE_UP, 1000, 0); // Perioda 1ms
+
+    // Povolení přerušení časovače TIM1
+    TIM1_ITConfig(TIM1_IT_UPDATE, ENABLE);
+}
+*/
+
+void update_display_from_encoder() {
+    int8_t encoder_change = Read_Encoder();
+    if (encoder_change != 0) {
+        process_time_change(encoder_change);
+        if (n == 0) {
+            n = MAX_TIME; // Nastavit čas na maximální hodnotu, pokud dosáhne nuly
+        }
+    }
+}
+
+/* ENKODER TLACITKO
+static bool encoder_button_pressed = false;
+
+
+void EXTI_Configuration(void) {
+    // Konfigurace tlačítka enkodéru jako externího přerušení
+    EXTI_DeInit(); // Reset konfigurace EXTI
+    EXTI_SetExtIntSensitivity(
+        EXTI_PORT_GPIOA,
+        EXTI_SENSITIVITY_FALL_ONLY); // Nastavení citlivosti na spád
+}
+
+// Funkce, která se vyvolá při stisknutí tlačítka enkodéru
+void EXTI_SW_ISR(void) {
+    encoder_button_pressed = true; // Nastavit příznak stisknutí tlačítka
+}
+*/
 void main(void) {
     uint32_t time = 0;
 
@@ -207,10 +258,13 @@ void main(void) {
     init_peripherals();
     init_spi();
     Encoder_GPIO_Init(); // Inicializace pinů enkodéru
+    // init_timer();
+    //EXTI_Configuration();
+    rim(); // Globální povolení přerušení
 
     display(DECODE_MODE, 0b11111111);
     display(SCAN_LIMIT, 7);
-    display(INTENSITY, 1);
+    display(INTENSITY, 4);
     display(DISPLAY_TEST, DISPLAY_TEST_OFF);
     display(SHUTDOWN, SHUTDOWN_ON);
     display(DIGIT0, 0xF);
@@ -224,40 +278,39 @@ void main(void) {
 
     while (1) {
 
-        if (milis() - time > 333) {
+        if (milis() - time > 1) {
             time = milis();
-            uint32_t digit0 = n % 10;
-            uint32_t digit1 = (n / 10) % 10;
-            uint32_t digit2 = n / 100;
-
-            display(DIGIT0, digit0);
-            display(DIGIT1, digit1);
-            display(DIGIT2, digit2);
-
-            int8_t encoder_change = Read_Encoder();
-            if (encoder_change != 0) {
-                n += encoder_change;
-                if (n > MAX_TIME) {
-                    n = MAX_TIME;
-                } else if (n < 0) {
-                    n = 0;
-                }
-            }
+            update_display_from_encoder();
+            update_display(n);
             // Aktualizace displeje s novou hodnotou zbývajícího času
             char display_buffer[4];
             sprintf(display_buffer, "%03d", n);
             for (uint8_t i = 0; i < 3; i++) {
                 SPI_SendData_ToDisplay(display_buffer[i]);
             }
-            // Odpocet, pokud je zbývající čas větší než nula
-            if (n > 0) {
-                n--; // Sniz čas o jednu sekundu
-            } else {
-                // Akustický signál po dosažení nuly
-                for (int i = 0; i < 5; i++) {
-                    beep(); // Aktivace akustického signálu
+            // ENKODER TLACITKO
+            /*if (encoder_button_pressed) {
+                int8_t encoder_change = Read_Encoder();
+                if (encoder_change != 0) {
+                    process_time_change(encoder_change); // Aktualizovat čas
+                    // Můžete přidat další akce, které mají být provedeny po
+                    // stisknutí tlačítka Například spuštění odpočtu
+                    if (n > 0) {
+                        n--; // Snížení času o jednu sekundu
+                    }
                 }
-            }
-        }
+                encoder_button_pressed =
+                    false; // Resetovat příznak stisknutí tlačítka
+            }*/
+        } /*
+                 // Odpocet, pokud je zbývající čas větší než nula
+                 if (n > 0) {
+                     n--; // Sniz čas o jednu sekundu
+                 } else {
+                     // Akustický signál po dosažení nuly
+                     for (int i = 0; i < 5; i++) {
+                         beep(); // Aktivace akustického signálu
+                     }
+                 }*/
     }
 }
