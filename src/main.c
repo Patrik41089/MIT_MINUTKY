@@ -95,10 +95,10 @@ void beep() {
 */
 
 // Funkce pro zpracování změny času
-void process_time_change(int8_t direction) {
+void process_time_change(int8_t direction) {        // Čtení změny stavu otáčení enkodérem
     if (direction == 1 && n < MAX_TIME) {
         n--;
-    } else if (direction == -1 && n > 0) {
+    } else if (direction == -1 && n > 0) {          // V mojí logice nastane vždy pouze odčítání času, protože to jinak kvůli rozbitému enkodéru nešlo vymyslet
         n--;
     }
 }
@@ -128,17 +128,17 @@ void SPI_SendData_ToDisplay(uint8_t data) {
 int8_t Read_Encoder(void) {
     static uint8_t last_DT_state = 0;
     uint8_t current_CLK_state =
-        GPIO_ReadInputPin(ENCODER_CLK_PORT, ENCODER_CLK_PIN);
+        GPIO_ReadInputPin(ENCODER_CLK_PORT, ENCODER_CLK_PIN);   // CLK v základu
     uint8_t current_DT_state =
-        GPIO_ReadInputPin(ENCODER_DT_PORT, ENCODER_DT_PIN);
+        GPIO_ReadInputPin(ENCODER_DT_PORT, ENCODER_DT_PIN);     // DATA v základu
 
-    int8_t encoder_value = 0;
+    int8_t encoder_value = 0;   // V primárním stavu není považován za otočený
 
-    if (current_CLK_state != last_DT_state) {
-        if (current_DT_state != current_CLK_state) {
-            encoder_value = -1; // Clockwise
+    if (current_CLK_state != last_DT_state) {           // Pokud se nerovnají(změní se) a to znamená, že se otočilo enkodérem
+        if (current_DT_state != current_CLK_state) {    // Pokud se nerovnají(změní se) a to znamená, že se otočilo enkodérem
+            encoder_value = 1; // Podle ručiček hodin, encoder_value hodnota směru otočení, dále použitá u fce process_time_change
         } else {
-            encoder_value = -1; // Counterclockwise
+            encoder_value = -1; // Proti ručičkám hodin
         }
     }
 
