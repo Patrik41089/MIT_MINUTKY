@@ -85,4 +85,8 @@ Závěr
 
 * **Podrobnější vysvětlení jednotlivých částí projektu je přímo v kódu, jednoduše přejdětě do souboru [main.c](https://github.com/Patrik41089/MIT_MINUTKY/blob/main/src/main.c)**
 
+**2) SCHÉMA ZAPOJENÍ**
+
+*Pro nahlédnutí přejdětě do [schéma.png]()
+
   
