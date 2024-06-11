@@ -60,13 +60,13 @@ PROJEKT MINUTKY
     <td><code>nebo Buzzer</code></td>
   </tr>
   <tr>
-    <td><code>Kabely F-M</code></td>
+    <td><code>Kabely F-M a F-F</code></td>
     <td>Propojení všech součástek k nepájivému poli či k SMT8</td>
     <td></td>
   </tr>
   <tr>
     <td><code>Displej LCD</code></td>
-    <td>Tady je spousta možností jaký použít. Já si osobně myslím, protože můj projekt je vyloženě o zobrazování na displeji, pro vizualizaci minut bude nejlepší vzít displej na kterém čísla budou hezky vidět, proto jsem si zvolil LCD</td>
+    <td>Tady je spousta možností jaký použít. Já si osobně myslím, protože můj projekt je vyloženě o zobrazování času na displeji, tak pro vizualizaci odpočtu minut bude bohatě stačit řádkový displej SPI, proto jsem si zvolil řádkový displej max 7219 pro SPI</td>
     <td><code>nebo třeba řádkový SPI</code></td>
   </tr>
 </table>
@@ -81,8 +81,8 @@ PROJEKT MINUTKY
 Závěr
 =
 
-**1) VÝVOJOVÝ DIAGRAM**
+**1) POPIS FUNKCE KÓDU**
 
-**2) POPIS FUNKCE KÓDU**
+* **Podrobnější vysvětlení jednotlivých částí projektu je přímo v kódu, jednoduše přejdětě do souboru [main.c](https://github.com/Patrik41089/MIT_MINUTKY/blob/main/src/main.c)**
 
   
