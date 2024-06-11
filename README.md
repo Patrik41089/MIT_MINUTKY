@@ -85,7 +85,7 @@ Závěr
 
 * **Podrobnější vysvětlení jednotlivých částí projektu je přímo v kódu, jednoduše přejdětě do souboru [main.c](https://github.com/Patrik41089/MIT_MINUTKY/blob/main/src/main.c)**
 * **Fyzicky je projekt řešen přes řádkový displej pro SPI, rotačním enkodérem a STM8S208RB připojným k PC**
-* Jak už může být zřejmé z názvu mého projektu, je hlavním úkolem odpočítávat minuty
+* **Jak už může být zřejmé z názvu mého projektu, je hlavním úkolem odpočítávat minuty**
 
 `V primárním stavu, po nahrátí kódu (příkazem make flash) se zapne displej a rozsvítí se na něm hodnota času 180, která signalizuje maximální počet minut. Tento maximální počet minut jde upravit pomocí rotačního enkodéru. Po směru i proti směru otáčení se čas snižuje, pokud se chcete opět dostat na maximální hodnotu času (180 minut) tak se potřebujete otáčením enkodéru dostat na hodnotu 0, což automaticky přepne hodnotu na maximální čas (otáčení enkodérem je nastaveno přívětivě, aby nastavování probíhalo rychle a zárověn velice přesně při minimální rotaci)`
 
