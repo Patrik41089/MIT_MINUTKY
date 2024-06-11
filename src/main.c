@@ -7,10 +7,10 @@
 #include <stm8s.h>
 
 // Definice pinu pro akustický signál (buzzer)
-#define BUZZER_PIN GPIO_PIN_3
-#define BUZZER_PORT GPIOC
+//#define BUZZER_PIN GPIO_PIN_3
+//#define BUZZER_PORT GPIOC
 
-// Definice pinů pro enkoder
+// Definice pinů pro enkodér
 #define ENCODER_SW_PIN GPIO_PIN_5 // SW
 #define ENCODER_SW_PORT GPIOA
 
@@ -37,56 +37,62 @@
 // Maximální čas v minutách
 #define MAX_TIME 180
 
-// Proměnná pro uložení zbývajícího času
+// Proměnná pro uložení minut
 volatile uint32_t n = MAX_TIME;
-// Definice globální proměnné pro indikaci stisknutí tlačítka
+// Definice globální proměnné pro změnu stavu tlačítka
 volatile bool tlacitko_stisknuto = false;
-// Definice globální proměnné pro stav odpočítávání
+// Definice globální proměnné pro stav odpočtu
 volatile bool countdown_active = false;
-volatile uint8_t seconds = 0; // Reprezentuje sekundy
+// Proměnná pro uložení sekund
+volatile uint8_t seconds = 0;
 
-// Prototypy funkcí
-void Encoder_GPIO_Init(void);
-void init_peripherals();
-void beep();
-void process_time_change(int8_t direction);
-void init_spi();
-int8_t Read_Encoder(void);
-void init(void);
-void display(uint8_t address, uint8_t data);
-void update_display(int32_t value);
-void update_display_from_encoder();
-void init_timer();
-void GPIO_Init_UserButton(void);
-void EXTI_Init_UserButton(void);
-void preruseni(void);
+// POužité funkce
+void Encoder_GPIO_Init(void);                   // Inicializace enkodéru
+//void init_peripherals();                      // inicializace buzzeru  
+//void beep();                                  // Funkce pro spuštění zvuku z buzzeru
+void process_time_change(int8_t direction);     // Čtení na jakou stranu se otáčí enkodérem a zmenšování času
+void init_spi();                                // Inicializace SPI pro displej
+int8_t Read_Encoder(void);                      // Změna času pro displej
+void init(void);                                // Inicializace displeje
+void display(uint8_t address, uint8_t data);    // Přenos adresy a dat pomocí masky pro zobrazení čísel
+void update_display(int32_t value);             // Výpočet jak se budou čísla zobrazovat
+void update_display_from_encoder();             // Aktualizace displeje po změně stavu při otáčení enkodérem
+//void init_timer();                            // Časovač (nepoužit, protože ho nebylo třeba)  
+void GPIO_Init_UserButton(void);                // Inicializace user tlačítka
+void EXTI_Init_UserButton(void);                // Povolení přerušení pro user tlačítko
+void preruseni(void);                           // Přerušení pro zjištění, zda se user tlačítko zmáčklo
+void SPI_SendData_ToDisplay(uint8_t data);      // Posílání dat přes SPI
 
 void Encoder_GPIO_Init(void) {
-    // Povolit hodiny pro port GPIOA (není třeba, je implicitně povoleno u STM8)
+    // (Povolit hodiny není třeba, je implicitně povoleno u STM8)
 
-    // Nastavení SW pinu jako vstup bez pull-up odporu
+    // Nastavení SW pinu s pull-up odporem
     GPIO_Init(ENCODER_SW_PORT, ENCODER_SW_PIN, GPIO_MODE_IN_FL_NO_IT);
 
-    // Nastavení DT pinu jako vstup bez pull-up odporu
+    // Nastavení DT pinu bez pull-up odporu
     GPIO_Init(ENCODER_DT_PORT, ENCODER_DT_PIN, GPIO_MODE_IN_FL_NO_IT);
 
-    // Nastavení CLK pinu jako vstup bez pull-up odporu
+    // Nastavení CLK pinu bez pull-up odporu
     GPIO_Init(ENCODER_CLK_PORT, ENCODER_CLK_PIN, GPIO_MODE_IN_FL_NO_IT);
 }
 
-// Inicializace periferií
+// Inicializace buzzeru
+/*
 void init_peripherals() {
     // Inicializace GPIO pro akustický signál (buzzer)
     GPIO_Init(BUZZER_PORT, BUZZER_PIN, GPIO_MODE_OUT_PP_LOW_FAST);
 }
+*/
 
-// Funkce pro zpracování akustického signálu
+// Funkce pro zpracování a spištění akustického signálu z buzzeru
+/*
 void beep() {
     GPIO_WriteReverse(BUZZER_PORT, BUZZER_PIN);
     // Počkejte krátkou dobu, abyste mohli slyšet zvuk
     for (int i = 0; i < 10000; i++)
         GPIO_WriteReverse(BUZZER_PORT, BUZZER_PIN);
 }
+*/
 
 // Funkce pro zpracování změny času
 void process_time_change(int8_t direction) {
@@ -112,11 +118,11 @@ void init_spi() {
 }
 
 void SPI_SendData_ToDisplay(uint8_t data) {
-    GPIO_WriteLow(CS_PORT, CS_PIN); // CS Low to select the slave
+    GPIO_WriteLow(CS_PORT, CS_PIN); // CS na 0 pro slave
     SPI_SendData(data);
     while (SPI_GetFlagStatus(SPI_FLAG_TXE) == RESET)
-        ;                            // Wait for transmission to complete
-    GPIO_WriteHigh(CS_PORT, CS_PIN); // CS High to deselect the slave
+        ;                            // Čekání pro dokončení
+    GPIO_WriteHigh(CS_PORT, CS_PIN); // CS na 1 pro zrušení slave
 }
 
 int8_t Read_Encoder(void) {
@@ -186,80 +192,79 @@ void display(uint8_t address, uint8_t data) {
 }
 
 void update_display(
-    int32_t value) { // Výpočet jak se budou zobrazovat čísla na displeji
-                     //  např. 137 je rozděleno na 100, 30 a 7 a na displeji na
-                     //  1,3 a 7
-    uint32_t digit0 = seconds % 10;
+    int32_t value) {                                // Výpočet jak se budou zobrazovat čísla na displeji
+                                                    //  např. 137 je rozděleno na 100, 30 a 7 a na displeji na 1,3 a 7
+    uint32_t digit0 = seconds % 10;                 // Sekundy se vždy budou na displeji při nastavování zobrazovat jako 0, protože v základu nastaveny na 0, pouze při odpočtu se změní na 59 pak odečte n o -1 a zase 59 sekund až do n = 0, seconds = 0
     uint32_t digit1 = (seconds / 10) % 10;
     uint32_t digit2 = n % 10;
     uint32_t digit3 = (n / 10) % 10;
     uint32_t digit4 = (n / 100) % 10;
 
-    display(DIGIT0, digit0);
+    display(DIGIT0, digit0);                         // Zobrazení čísla na nultém 7segmentu
     display(DIGIT1, digit1);
-    display(DIGIT2, digit2 | 0b10000000);
+    display(DIGIT2, digit2 | 0b10000000);            // 0b10000000 je rozsvícenítečky u 7segmentu číslo 2
     display(DIGIT3, digit3);
     display(DIGIT4, digit4);
 }
 
 void update_display_from_encoder() {
-    if (!countdown_active) { // Aktualizace displeje pouze když není spuštěn
-                             // odpočet
-        int8_t encoder_change = Read_Encoder();
-        if (encoder_change != 0) {
-            process_time_change(encoder_change);
+    if (!countdown_active) {                        // Aktualizace displeje pouze když není spuštěn odpočet
+        int8_t encoder_change = Read_Encoder();     // Vždy bude u mě vracet -1 protože obě encoder_value se vždy budou rovnat -1
+        if (encoder_change != 0) {                  // -1 se nerovná nule takže funkce proběhne
+            process_time_change(encoder_change);    // Funkce p_t_ch vezme hodnotu encoder_change (vždy -1) a určí tím jakým směrem se otáčí
+                                                    // Vyčte vždy pouze směr (direction) -1 a odečte hodnotu času o -1
             if (n == 0) {
-                n = MAX_TIME; // Nastavit čas na maximální hodnotu, pokud
-                              // dosáhne nuly
-            }
+                n = MAX_TIME;                       // Nastavit čas na maximální hodnotu, pokud otáčením enkodérem displej dosáhne nuly
+            }                                       // Jinak bych se na MAX_TIME nedostal, protože enkodér oběma směry pouze čas odečítá
         }
     }
 }
 
 void GPIO_Init_UserButton(void) {
-    // Nastavení pinu PE4 jako vstup s pull-up rezistorem
+    // Nastavení pinu PE4 s pull-up rezistorem
     GPIO_Init(BUTTON_PORT, BUTTON_PIN, GPIO_MODE_IN_PU_IT);
 }
 
-// Inicializace přerušení pro tlačítko USER
+// Inicializace přerušení pro user tlačítko
 void EXTI_Init_UserButton(void) {
-    // Povolení přerušení na pádu hrany (falling edge) pro port D
+    // Povolení přerušení na pádu hrany (falling edge) pro port E
     EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOE, EXTI_SENSITIVITY_FALL_ONLY);
 }
 
-// Obsluha přerušení pro port D
+// Obsluha přerušení pro port E
 void preruseni(void) {
     if (GPIO_ReadInputPin(BUTTON_PORT, BUTTON_PIN) == RESET && n > 0) {
         tlacitko_stisknuto = true;
     }
 }
 
+// Hlavní smyčka
 void main(void) {
 
     uint32_t time = 0;
     uint32_t time2 = 0;
 
-    init(); // init displeje (porty a piny) + milis() !
+    init();                     // init displeje (porty a piny) + milis() !
     CLK_HSIPrescalerConfig(
         CLK_PRESCALER_HSIDIV1); // Nastavení hodinového prescaleru
-    init_peripherals();         // Init buzzeru
+    //init_peripherals();         // Init buzzeru
     init_spi();                 // Init displeje neboli rychlosti atd
     Encoder_GPIO_Init();        // Inicializace pinů enkodéru
     // Inicializace GPIO user tlačítka
     GPIO_Init_UserButton();
 
-    // Inicializace přerušení
+    // Inicializace přerušení pro user tlačítko
     EXTI_Init_UserButton();
 
-    // Povolení globálních přerušení
+    // Povolení všech přerušení
     enableInterrupts();
 
-    display(DECODE_MODE, 0b11111111);
-    display(SCAN_LIMIT, 7);
-    display(INTENSITY, 4);
+    display(DECODE_MODE, 0b11111111);           // Zapnutí znakové sady
+    display(SCAN_LIMIT, 5);                     // Zapnutí 5x 7segment
+    display(INTENSITY, 4);                      // Jas displeje
     display(DISPLAY_TEST, DISPLAY_TEST_OFF);
     display(SHUTDOWN, SHUTDOWN_ON);
-    display(DIGIT0, 0xF);
+    display(DIGIT0, 0xF);                       // Zápis hodnoty na 1. cifru
     display(DIGIT1, 0xF);
     display(DIGIT2, 0xF);
     display(DIGIT3, 0xF);
@@ -272,19 +277,18 @@ void main(void) {
 
         if (milis() - time > 1) {
             time = milis();
-            update_display_from_encoder();
-            update_display(n);
-            // Aktualizace displeje s novou hodnotou zbývajícího času
-            char display_buffer[4];
+            update_display_from_encoder();              // Aktualizace displeje po změně stavu při otáčení enkodérem
+            update_display(n);                          // Výpočet pro aktualizaci (změny) času
+            char display_buffer[4];                     // Aktualizace displeje s novou hodnotou zbývajícího času
             sprintf(display_buffer, "%03d", n);
             for (uint8_t i = 0; i < 3; i++) {
                 SPI_SendData_ToDisplay(display_buffer[i]);
             }
         }
-       if (milis() - time2 > 1000) {
+       if (milis() - time2 > 1000) {                    // 1000ms = 1s odpočet sekund, 1s protožepotřebuji odpočítávat pouze sekundy a až se odpočtou tak jedna minuta se odečte o -1 a zase se začnou odpočítávat sekundy
             time2 = milis();
             if (tlacitko_stisknuto && (n > 0 || seconds > 0)) {
-                countdown_active = true;
+                countdown_active = true;                // Běží odpočet, zastaví nastavování času enkodérem
                 if (seconds == 0) {
                     if (n > 0) {
                         n--;
@@ -295,10 +299,8 @@ void main(void) {
                 }
             }
             if (n == 0 && seconds == 0) {
-                tlacitko_stisknuto = false;
-                countdown_active = false;
-                                                // Konec odpočtu, jinak by hned začal po zadání
-                                                // max_time zase odpočet, což nechceme!
+                tlacitko_stisknuto = false;              // Tlačítko není stisknuto odpočet nemá začít
+                countdown_active = false;                // Odpočet skončil, lze opět nastavit čas enkodérem
             }
         }
     }
