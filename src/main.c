@@ -41,6 +41,9 @@
 volatile uint32_t n = MAX_TIME;
 // Definice globální proměnné pro indikaci stisknutí tlačítka
 volatile bool tlacitko_stisknuto = false;
+// Definice globální proměnné pro stav odpočítávání
+volatile bool countdown_active = false;
+volatile uint8_t seconds = 0; // Reprezentuje sekundy
 
 // Prototypy funkcí
 void Encoder_GPIO_Init(void);
@@ -186,22 +189,29 @@ void update_display(
     int32_t value) { // Výpočet jak se budou zobrazovat čísla na displeji
                      //  např. 137 je rozděleno na 100, 30 a 7 a na displeji na
                      //  1,3 a 7
-    uint32_t digit0 = value % 10;
-    uint32_t digit1 = (value / 10) % 10;
-    uint32_t digit2 = (value / 100) % 10;
+    uint32_t digit0 = seconds % 10;
+    uint32_t digit1 = (seconds / 10) % 10;
+    uint32_t digit2 = n % 10;
+    uint32_t digit3 = (n / 10) % 10;
+    uint32_t digit4 = (n / 100) % 10;
 
     display(DIGIT0, digit0);
     display(DIGIT1, digit1);
-    display(DIGIT2, digit2);
+    display(DIGIT2, digit2 | 0b10000000);
+    display(DIGIT3, digit3);
+    display(DIGIT4, digit4);
 }
 
 void update_display_from_encoder() {
-    int8_t encoder_change = Read_Encoder();
-    if (encoder_change != 0) {
-        process_time_change(encoder_change);
-        if (n == 0) {
-            n = MAX_TIME; // Nastavit čas na maximální hodnotu, pokud dosáhne
-                          // nuly
+    if (!countdown_active) { // Aktualizace displeje pouze když není spuštěn
+                             // odpočet
+        int8_t encoder_change = Read_Encoder();
+        if (encoder_change != 0) {
+            process_time_change(encoder_change);
+            if (n == 0) {
+                n = MAX_TIME; // Nastavit čas na maximální hodnotu, pokud
+                              // dosáhne nuly
+            }
         }
     }
 }
@@ -271,15 +281,24 @@ void main(void) {
                 SPI_SendData_ToDisplay(display_buffer[i]);
             }
         }
-        if (milis() - time2 > 1000) { // Změna na 60 000 pro minuty
+       if (milis() - time2 > 1000) {
             time2 = milis();
-            if (tlacitko_stisknuto && n > 0) {
-                n--;
+            if (tlacitko_stisknuto && (n > 0 || seconds > 0)) {
+                countdown_active = true;
+                if (seconds == 0) {
+                    if (n > 0) {
+                        n--;
+                        seconds = 59;
+                    }
+                } else {
+                    seconds--;
+                }
             }
-            if (n == 0) {
-                tlacitko_stisknuto =
-                    false; // Konec odpočtu, jinak by hned začal po zadání
-                           // max_time zase odpočet, což nechceme!
+            if (n == 0 && seconds == 0) {
+                tlacitko_stisknuto = false;
+                countdown_active = false;
+                                                // Konec odpočtu, jinak by hned začal po zadání
+                                                // max_time zase odpočet, což nechceme!
             }
         }
     }
