@@ -87,6 +87,6 @@ Závěr
 
 **2) SCHÉMA ZAPOJENÍ**
 
-*Pro nahlédnutí přejdětě do [schéma.png]()
+*Pro nahlédnutí přejdětě do [schéma.png](https://github.com/Patrik41089/MIT_MINUTKY/blob/main/Sch%C3%A9ma.png)
 
   
