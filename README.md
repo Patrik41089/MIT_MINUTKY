@@ -91,6 +91,8 @@ V primárním stavu, po nahrátí kódu (příkazem make flash) se zapne displej
 
 Samotný **odpočet spustíte modrým tlačítkem USER**, které se nachází přímo na modulu SMT8S. Jakmile začne odpočet nebude již možné nastavovat čas pomocí otáčení enkodérem. Speciální funkcí také je, **když budete držet tlačítko USER**, **odpočet se pozastaví** po dobu dokud jej nepřestanete držet.
 
+Jakmile odpočet skončí na displeji zůstane hodnota 000.00 a opět můžete enkodérem nastavit čas podle svých preferencí.
+
 
 **2) SCHÉMA ZAPOJENÍ**
 
