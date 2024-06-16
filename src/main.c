@@ -279,8 +279,9 @@ void main(void) {
             time = milis();
             update_display_from_encoder();              // Aktualizace displeje po změně stavu při otáčení enkodérem
             update_display(n);                          // Výpočet pro aktualizaci (změny) času
-            char display_buffer[4];                     // Aktualizace displeje s novou hodnotou zbývajícího času
-            sprintf(display_buffer, "%03d", n);
+            char display_buffer[4];                     // Aktualizace displeje s novou hodnotou zbývajícího času, vytvoří pole pro uložení textového řetězce. Velikost 4, aby bylo místo pro tři číslice a jednu koncovou nulovou hodnotu ('\0')
+            sprintf(display_buffer, "%03d", n);         // Převede hodnotu n na řetězec se třemi číslicemi např 123
+                                                        // Pokud je hodnota n menší než tři číslice, přidají se zleva nuly (např. 5 se převede na 005).
             for (uint8_t i = 0; i < 3; i++) {
                 SPI_SendData_ToDisplay(display_buffer[i]);
             }
