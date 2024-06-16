@@ -98,4 +98,8 @@ Jakmile odpočet skončí na displeji zůstane hodnota 000.00 a opět můžete e
 
 * Pro nahlédnutí přejdětě do [schéma.png](https://github.com/Patrik41089/MIT_MINUTKY/blob/main/Sch%C3%A9ma.png)
 
+**3) BLOKOVÉ SCHÉMA**
+
+* Pro nahlédnutí přejděte do [blokové_schéma.png](https://github.com/Patrik41089/MIT_MINUTKY/blob/main/BLOKOV%C3%89_SCH%C3%89MA.pdf)
+
   
