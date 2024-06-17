@@ -6,10 +6,6 @@
 #include <stdio.h>
 #include <stm8s.h>
 
-// Definice pinu pro akustický signál (buzzer)
-//#define BUZZER_PIN GPIO_PIN_3
-//#define BUZZER_PORT GPIOC
-
 // Definice pinů pro enkodér
 #define ENCODER_SW_PIN GPIO_PIN_5 // SW
 #define ENCODER_SW_PORT GPIOA
@@ -46,10 +42,8 @@ volatile bool countdown_active = false;
 // Proměnná pro uložení sekund
 volatile uint8_t seconds = 0;
 
-// POužité funkce
+// Použité funkce
 void Encoder_GPIO_Init(void);                   // Inicializace enkodéru
-//void init_peripherals();                      // inicializace buzzeru  
-//void beep();                                  // Funkce pro spuštění zvuku z buzzeru
 void process_time_change(int8_t direction);     // Čtení na jakou stranu se otáčí enkodérem a zmenšování času
 void init_spi();                                // Inicializace SPI pro displej
 int8_t Read_Encoder(void);                      // Změna času pro displej
@@ -57,7 +51,6 @@ void init(void);                                // Inicializace displeje
 void display(uint8_t address, uint8_t data);    // Přenos adresy a dat pomocí masky pro zobrazení čísel
 void update_display(int32_t value);             // Výpočet jak se budou čísla zobrazovat
 void update_display_from_encoder();             // Aktualizace displeje po změně stavu při otáčení enkodérem
-//void init_timer();                            // Časovač (nepoužit, protože ho nebylo třeba)  
 void GPIO_Init_UserButton(void);                // Inicializace user tlačítka
 void EXTI_Init_UserButton(void);                // Povolení přerušení pro user tlačítko
 void preruseni(void);                           // Přerušení pro zjištění, zda se user tlačítko zmáčklo
@@ -75,24 +68,6 @@ void Encoder_GPIO_Init(void) {
     // Nastavení CLK pinu bez pull-up odporu
     GPIO_Init(ENCODER_CLK_PORT, ENCODER_CLK_PIN, GPIO_MODE_IN_FL_NO_IT);
 }
-
-// Inicializace buzzeru
-/*
-void init_peripherals() {
-    // Inicializace GPIO pro akustický signál (buzzer)
-    GPIO_Init(BUZZER_PORT, BUZZER_PIN, GPIO_MODE_OUT_PP_LOW_FAST);
-}
-*/
-
-// Funkce pro zpracování a spištění akustického signálu z buzzeru
-/*
-void beep() {
-    GPIO_WriteReverse(BUZZER_PORT, BUZZER_PIN);
-    // Počkejte krátkou dobu, abyste mohli slyšet zvuk
-    for (int i = 0; i < 10000; i++)
-        GPIO_WriteReverse(BUZZER_PORT, BUZZER_PIN);
-}
-*/
 
 // Funkce pro zpracování změny času
 void process_time_change(int8_t direction) {        // Čtení změny stavu otáčení enkodérem
@@ -148,8 +123,6 @@ int8_t Read_Encoder(void) {
 }
 
 void init(void) {
-    CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1); // taktovani MCU na 16MHz
-
     GPIO_Init(DIN_PORT, DIN_PIN, GPIO_MODE_OUT_PP_LOW_SLOW);
     GPIO_Init(CS_PORT, CS_PIN, GPIO_MODE_OUT_PP_HIGH_SLOW);
     GPIO_Init(CLK_PORT, CLK_PIN, GPIO_MODE_OUT_PP_LOW_SLOW);
@@ -162,9 +135,7 @@ void display(uint8_t address, uint8_t data) {
     LOW(CS);       // začátek přenosu
 
     /* pošlu adresu */
-    mask = 128;
     mask = 1 << 7;
-    mask = 0b10000000;
     while (mask) {
         if (address & mask) {
             HIGH(DIN);
