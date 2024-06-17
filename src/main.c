@@ -34,7 +34,7 @@
 #define MAX_TIME 180
 
 // Proměnná pro uložení minut
-volatile uint32_t n = MAX_TIME;
+uint8_t n = MAX_TIME;
 // Definice globální proměnné pro změnu stavu tlačítka
 volatile bool tlacitko_stisknuto = false;
 // Definice globální proměnné pro stav odpočtu
@@ -273,6 +273,7 @@ void main(void) {
             if (n == 0 && seconds == 0) {
                 tlacitko_stisknuto = false;              // Tlačítko není stisknuto odpočet nemá začít
                 countdown_active = false;                // Odpočet skončil, lze opět nastavit čas enkodérem
+                n = MAX_TIME;
             }
         }
     }
